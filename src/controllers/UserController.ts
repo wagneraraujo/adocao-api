@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import { NextFunction, Request, RequestHandler, Response } from "express";
 import { z, ZodError } from "zod";
 import bcrypt from "bcrypt";
+import createToken from "../helpers/createToken";
 
 const userSchema = z.object({
   name: z.string(),
@@ -51,9 +52,10 @@ const UserController = {
 
       try {
         const newUser = await user.save();
-        res
-          .status(StatusCodes.CREATED)
-          .json({ message: "Usuário criado com sucesso", newUser });
+        await createToken(newUser, req, res);
+        // res
+        //   .status(StatusCodes.CREATED)
+        //   .json({ message: "Usuário criado com sucesso", newUser });
       } catch (error) {
         console.error("Erro ao salvar o usuário:", error);
         res.status(StatusCodes.BAD_REQUEST).json({ message: error });
