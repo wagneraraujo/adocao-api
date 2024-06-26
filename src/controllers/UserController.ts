@@ -13,6 +13,11 @@ const userSchema = z.object({
   phone: z.string(),
 });
 
+const authSchema = z.object({
+  email: z.string().email(),
+  password: z.string(),
+});
+
 function formatZodErrors(error: ZodError) {
   return error.issues.map((issue) => {
     const path = issue.path.join(".");
@@ -22,9 +27,9 @@ function formatZodErrors(error: ZodError) {
 }
 
 type UserType = z.infer<typeof userSchema>;
+type AuthType = z.infer<typeof authSchema>;
 const UserController = {
   async register(req: Request, res: Response, next: NextFunction) {
-    console.log("entrou na rota");
     try {
       const validationData = userSchema.parse(req.body);
       req.body = validationData as UserType;
@@ -68,6 +73,45 @@ const UserController = {
       } else {
         return res.status(500).json({ error: "erro inesperado de servidor" });
       }
+    }
+  },
+
+  async login(req: Request, res: Response, next: NextFunction) {
+    console.log("login");
+    try {
+      const { email, password } = req.body;
+      const validationAuth = authSchema.parse(req.body);
+      req.body = validationAuth as AuthType;
+
+      const user = await User.findOne({ email: email });
+      if (!user) {
+        res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ message: "Usuário não encontrado" });
+        return;
+      }
+
+      //check passworad
+      const checkPassword = await bcrypt.compare(password, user.password);
+      if (!checkPassword) {
+        res
+          .status(StatusCodes.UNAUTHORIZED)
+          .json({ message: "Senha inválida" });
+        return;
+      }
+
+      await createToken(user, req, res);
+    } catch (error) {
+      if (error instanceof ZodError) {
+        return res
+          .status(StatusCodes.BAD_REQUEST)
+          .json({ errors: error.errors });
+      }
+
+      console.error("Erro no login:", error);
+      return res
+        .status(StatusCodes.INTERNAL_SERVER_ERROR)
+        .json({ error: "Erro interno do servidor" });
     }
   },
 };
