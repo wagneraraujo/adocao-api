@@ -4,6 +4,9 @@ import { NextFunction, Request, RequestHandler, Response } from "express";
 import { z, ZodError } from "zod";
 import bcrypt from "bcrypt";
 import createToken from "../helpers/createToken";
+import getUserByToken from "../helpers/get-user-by-token";
+import getToken from "../helpers/getToken";
+import jwt from "jsonwebtoken";
 
 const userSchema = z.object({
   name: z.string(),
@@ -28,6 +31,7 @@ function formatZodErrors(error: ZodError) {
 
 type UserType = z.infer<typeof userSchema>;
 type AuthType = z.infer<typeof authSchema>;
+const partialUserSchema = userSchema.partial();
 const UserController = {
   async register(req: Request, res: Response, next: NextFunction) {
     try {
@@ -113,6 +117,49 @@ const UserController = {
         .status(StatusCodes.INTERNAL_SERVER_ERROR)
         .json({ error: "Erro interno do servidor" });
     }
+  },
+
+  async checkUser(req: Request, res: Response) {
+    console.log("check");
+
+    let currentUser: any;
+
+    const header = req.headers.authorization;
+    console.log(req.headers.authorization);
+    if (header) {
+      const token: any = getToken(req, res);
+      const decoded: any = jwt.verify(token, "lauraalves");
+      currentUser = await User.findById(decoded?.id);
+      currentUser.password = undefined;
+    } else {
+      currentUser = null;
+    }
+
+    res.status(StatusCodes.OK).send(currentUser);
+  },
+
+  async editUser(req: Request, res: Response) {
+    const id: string = req.params.id;
+    const token: any = getToken(req, res);
+    const user = await getUserByToken(token);
+
+    // const { name, email, phone, password } = req.body;
+    let image = "";
+
+    if (!user) {
+      return res.status(StatusCodes.FORBIDDEN).json({
+        message: "Usuário não encontrado",
+      });
+    }
+
+    const validationEdit = partialUserSchema.parse(req.body);
+    Object.assign(user, validationEdit);
+
+    const updateUser = await user.save();
+
+    res.status(StatusCodes.OK).json({
+      message: "editar usuario",
+    });
   },
 };
 
