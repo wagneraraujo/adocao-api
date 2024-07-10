@@ -7,6 +7,7 @@ import createToken from "../helpers/createToken";
 import getUserByToken from "../helpers/get-user-by-token";
 import getToken from "../helpers/getToken";
 import jwt from "jsonwebtoken";
+import { Types, isValidObjectId } from "mongoose";
 
 const userSchema = z.object({
   name: z.string(),
@@ -119,47 +120,65 @@ const UserController = {
     }
   },
 
-  async checkUser(req: Request, res: Response) {
-    console.log("check");
-
+  async checkUser(req: Request, res: Response, next: NextFunction) {
     let currentUser: any;
-
     const header = req.headers.authorization;
-    console.log(req.headers.authorization);
     if (header) {
-      const token: any = getToken(req, res);
+      const token: any = getToken(req, res, next);
       const decoded: any = jwt.verify(token, "lauraalves");
       currentUser = await User.findById(decoded?.id);
       currentUser.password = undefined;
     } else {
       currentUser = null;
     }
-
     res.status(StatusCodes.OK).send(currentUser);
   },
 
-  async editUser(req: Request, res: Response) {
-    const id: string = req.params.id;
-    const token: any = getToken(req, res);
-    const user = await getUserByToken(token);
+  async getUserById(req: Request, res: Response) {
+    const id = req.params.id;
 
-    // const { name, email, phone, password } = req.body;
-    let image = "";
+    const user = await User.findById(id).select("-password");
 
     if (!user) {
-      return res.status(StatusCodes.FORBIDDEN).json({
-        message: "Usuário não encontrado",
-      });
+      res
+        .status(StatusCodes.UNPROCESSABLE_ENTITY)
+        .json({ message: "Usuário não encontrado" });
     }
 
-    const validationEdit = partialUserSchema.parse(req.body);
-    Object.assign(user, validationEdit);
+    res.status(StatusCodes.OK).json({ user });
+  },
 
-    const updateUser = await user.save();
+  async editUser(req: Request, res: Response, next: NextFunction) {
+    const id = new Types.ObjectId(req.params.id);
+    if (!isValidObjectId(id)) {
+      return res
+        .status(StatusCodes.BAD_GATEWAY)
+        .json({ message: "Esse ID de usuário não é valido" });
+    }
 
-    res.status(StatusCodes.OK).json({
-      message: "editar usuario",
-    });
+    const token: any = getToken(req, res, next);
+    console.log("token edit", token);
+    let image = "";
+    const user: any = await getUserByToken(token?.id);
+    const validationDataEdit = partialUserSchema.parse(req.body);
+    Object.assign(user, validationDataEdit);
+
+    const userExist = await User.findOne({ email: user?.email });
+    console.log("userExist", userExist);
+
+    if (user.email !== userExist?.email) {
+      return res
+        .status(StatusCodes.BAD_GATEWAY)
+        .json({ message: "Emails são diferentes, verifique" });
+    }
+
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Usuário não encontrado" });
+    }
+
+    console.log("user edit", user);
   },
 };
 
