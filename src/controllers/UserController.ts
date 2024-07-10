@@ -159,8 +159,14 @@ const UserController = {
     const token: any = getToken(req, res, next);
     console.log("token edit", token);
     let image = "";
-    const user: any = await getUserByToken(token?.id);
+    const user: any = await getUserByToken(token);
+    if (!user) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Usuário não encontrado" });
+    }
     const validationDataEdit = partialUserSchema.parse(req.body);
+    console.log("validationDataEdit", validationDataEdit);
     Object.assign(user, validationDataEdit);
 
     const userExist = await User.findOne({ email: user?.email });
@@ -178,7 +184,20 @@ const UserController = {
         .json({ message: "Usuário não encontrado" });
     }
 
-    console.log("user edit", user);
+    try {
+      const updateUser = await User.findOneAndUpdate(
+        { _id: user.id },
+        { $set: user },
+        { new: true },
+      );
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Usuário atualizado com sucesso" });
+    } catch (error) {
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "Algo deu errado" + error });
+    }
   },
 };
 
