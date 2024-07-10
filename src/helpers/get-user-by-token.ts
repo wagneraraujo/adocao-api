@@ -13,6 +13,7 @@ const getUserByToken = async (token: string) => {
   const userId = verified.id;
 
   const user = await User.findOne({ _id: userId });
+  console.log("user getuyserbytoken", user);
   return user;
 };
 
