@@ -158,8 +158,12 @@ const UserController = {
 
     const token: any = getToken(req, res, next);
     console.log("token edit", token);
-    let image = "";
+    //substituir o json por  forrmdata
+    console.log(req?.file, "-=----");
     const user: any = await getUserByToken(token);
+    // if (req.file) {
+    //   user.image = req.file.filename;
+    // }
     if (!user) {
       return res
         .status(StatusCodes.NOT_FOUND)
