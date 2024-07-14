@@ -28,7 +28,7 @@ const imageUploud = multer({
     if (!file.originalname.match(/\.(png|jpg|JPG|PNG|jpeg|JPEG)$/)) {
       return cb(new Error("Apenas imagens png ou jpg"));
     }
-    cb(undefined, true);
+    cb(null, true);
   },
 });
 
