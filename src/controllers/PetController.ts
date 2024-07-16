@@ -1,0 +1,73 @@
+import { StatusCodes } from "http-status-codes";
+import { NextFunction, Request, RequestHandler, Response } from "express";
+import { z, ZodError } from "zod";
+import bcrypt from "bcrypt";
+import createToken from "../helpers/createToken";
+import getUserByToken from "../helpers/get-user-by-token";
+import getToken from "../helpers/getToken";
+import jwt from "jsonwebtoken";
+import { Types, isValidObjectId } from "mongoose";
+import Pet from "../models/Pet";
+import formatZodErrors from "../helpers/formatZodErro";
+
+const petSchema = z.object({
+  name: z.string().default("Precisa preencher o nome"),
+  age: z.number(),
+  weight: z.number().positive("O peso deve ser um número positivo."),
+  color: z.string(),
+  images: z.array(z.any()),
+  available: z.boolean(),
+  user: z.object({}).passthrough(),
+  adopter: z.object({}).passthrough().optional(),
+});
+
+type PetType = z.infer<typeof petSchema>;
+
+const PetController = {
+  async create(req: Request, res: Response, next: NextFunction) {
+    const validationBody = petSchema.parse(req.body);
+    const available = true;
+    console.log("validationBody", validationBody);
+
+    const token = getToken(req, res, next);
+    const user: any = await getUserByToken(token);
+    if (!user)
+      return res
+        .status(StatusCodes.BAD_REQUEST)
+        .json({ message: "Usuário não encontrado" });
+
+    //pet
+    const { name, age, weight, color } = req.body;
+    const pet = new Pet({
+      name,
+      age,
+      weight,
+      color,
+      available,
+      images: [],
+      user: {
+        _id: user.id,
+        name: user.name,
+        image: user.image,
+        phone: user.phone,
+      },
+    });
+    try {
+      const newPet = await pet.save();
+
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Pet criado com sucesso!", newPet });
+    } catch (error) {
+      console.log("error");
+      if (error instanceof z.ZodError) {
+        const errorZod = formatZodErrors(error);
+        return res.status(StatusCodes.BAD_REQUEST).json({ errors: errorZod });
+      } else {
+        return res.status(500).json({ error: "erro inesperado de servidor" });
+      }
+    }
+  },
+};
+
+export default PetController;
