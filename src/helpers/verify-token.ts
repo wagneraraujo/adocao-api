@@ -5,10 +5,8 @@ import getToken from "./getToken";
 
 //middleware for validate token
 const checkToken = (req: Request, res: Response, next: NextFunction) => {
-  console.log("verificar token");
   const token = getToken(req, res, next);
   const newToken: string | any = token;
-  console.log("token checkToken", token);
   if (!req?.headers.authorization) {
     return res
       .status(StatusCodes.BAD_REQUEST)
@@ -20,7 +18,6 @@ const checkToken = (req: Request, res: Response, next: NextFunction) => {
       .status(StatusCodes.BAD_REQUEST)
       .json({ message: "Acesso negado" });
   }
-
   try {
     const verified = jwt.verify(newToken, "lauraalves") as JwtPayload;
     (req as any).user = verified;
