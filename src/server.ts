@@ -3,6 +3,7 @@ import cors from "cors";
 import bodyParser from "body-parser";
 
 import { router } from "./routes/UserRoutes";
+import petRouter from "./routes/PetRoutes";
 import connectDB from "./db/connection";
 const app = express();
 const port = 3000;
@@ -13,6 +14,7 @@ app.use(bodyParser.json());
 
 //routes
 app.use("/users", router);
+app.use("/pets", petRouter);
 app.get("/", (req: any, res: any) => {
   res.send("Olá, este é o meu servidor Express!\n");
 });
