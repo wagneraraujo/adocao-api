@@ -12,13 +12,16 @@ import formatZodErrors from "../helpers/formatZodErro";
 
 const petSchema = z.object({
   name: z.string().default("Precisa preencher o nome"),
-  age: z.number(),
-  weight: z.number().positive("O peso deve ser um número positivo."),
+  age: z.number().int().positive().or(z.string()),
+  weight: z
+    .number()
+    .positive("O peso deve ser um número positivo.")
+    .or(z.string()),
   color: z.string(),
-  images: z.array(z.any()),
-  available: z.boolean(),
-  user: z.object({}).passthrough(),
-  adopter: z.object({}).passthrough().optional(),
+  images: z.any(),
+  available: z.enum(["true", "false"]),
+  user: z.any(),
+  adopter: z.any(),
 });
 
 type PetType = z.infer<typeof petSchema>;
@@ -38,6 +41,8 @@ const PetController = {
 
     //pet
     const { name, age, weight, color } = req.body;
+    const images = req.files;
+    console.log("images", images);
     const pet = new Pet({
       name,
       age,
@@ -53,11 +58,12 @@ const PetController = {
       },
     });
     try {
-      const newPet = await pet.save();
+      // const newPet = await pet.save();
 
-      res
-        .status(StatusCodes.OK)
-        .json({ message: "Pet criado com sucesso!", newPet });
+      // res
+      //   .status(StatusCodes.OK)
+      //   .json({ message: "Pet criado com sucesso!", newPet });
+      console.log("salvo com sucesso");
     } catch (error) {
       console.log("error");
       if (error instanceof z.ZodError) {
