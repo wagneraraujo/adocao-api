@@ -10,4 +10,6 @@ petRouter.post(
   PetController.create,
 );
 
+petRouter.get("/", PetController.getAll);
+
 export default petRouter;

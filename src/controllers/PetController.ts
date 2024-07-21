@@ -42,14 +42,13 @@ const PetController = {
     //pet
     const { name, age, weight, color } = req.body;
     const images = req.files;
-    console.log("images", images);
     const pet = new Pet({
       name,
       age,
       weight,
       color,
       available,
-      images: [],
+      images: images,
       user: {
         _id: user.id,
         name: user.name,
@@ -58,11 +57,10 @@ const PetController = {
       },
     });
     try {
-      // const newPet = await pet.save();
-
-      // res
-      //   .status(StatusCodes.OK)
-      //   .json({ message: "Pet criado com sucesso!", newPet });
+      const newPet = await pet.save();
+      res
+        .status(StatusCodes.OK)
+        .json({ message: "Pet criado com sucesso!", newPet });
       console.log("salvo com sucesso");
     } catch (error) {
       console.log("error");
@@ -73,6 +71,14 @@ const PetController = {
         return res.status(500).json({ error: "erro inesperado de servidor" });
       }
     }
+  },
+
+  async getAll(req: Request, res: Response, next: NextFunction) {
+    const pets = await Pet.find().sort("-createdAt");
+    res.status(StatusCodes.OK).json({
+      message: "Tudo certo, ",
+      pets,
+    });
   },
 };
 
