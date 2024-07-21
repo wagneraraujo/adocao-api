@@ -11,5 +11,6 @@ petRouter.post(
 );
 
 petRouter.get("/", PetController.getAll);
+petRouter.get("/allmypets", checkToken, PetController.getAll);
 
 export default petRouter;

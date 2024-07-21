@@ -80,6 +80,20 @@ const PetController = {
       pets,
     });
   },
+
+  async getAllUserPets(req: Request, res: Response, next: NextFunction) {
+    //user
+    const token = getToken(req, res, next);
+    const user = await getUserByToken(token);
+
+    const pets = await Pet.find({
+      "user._id": user?._id,
+    }).sort("-createdAt");
+
+    res
+      .status(StatusCodes.OK)
+      .json({ message: "Todos pet do usuario encontrado", pets });
+  },
 };
 
 export default PetController;
