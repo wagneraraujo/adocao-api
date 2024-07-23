@@ -94,6 +94,36 @@ const PetController = {
       .status(StatusCodes.OK)
       .json({ message: "Todos pet do usuario encontrado", pets });
   },
+
+  async getAllUserAdoptions(req: Request, res: Response, next: NextFunction) {
+    //user
+    const token = getToken(req, res, next);
+    const user = await getUserByToken(token);
+
+    const pets = await Pet.find({ "adopter._id": user?._id }).sort(
+      "-createdAt",
+    );
+
+    res.status(StatusCodes.OK).json({ pets });
+  },
+
+  async getPerById(req: Request, res: Response, next: NextFunction) {
+    const id = req.params.id;
+
+    if (!isValidObjectId(id)) {
+      res.status(StatusCodes.BAD_REQUEST).json({ message: "Id invalido" });
+      return;
+    }
+
+    //get
+    const pet = await Pet.findOne({ _id: id });
+    if (!pet)
+      return res
+        .status(StatusCodes.NOT_FOUND)
+        .json({ message: "não encontrado" });
+
+    res.status(StatusCodes.OK).json({ pet: pet });
+  },
 };
 
 export default PetController;
